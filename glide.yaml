@@ -1,0 +1,4 @@
+package: github.com/consensys/event-crawler
+import:
+- package: github.com/lib/pq
+- package: gopkg.in/gorp.v1

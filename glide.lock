@@ -1,0 +1,10 @@
+hash: 2040c9254020ecbb98b7e8dbf08aea84f2ac1ba690451324af75ae5bb9591fb5
+updated: 2016-12-27T03:05:51.820462992Z
+imports:
+- name: github.com/lib/pq
+  version: 5bf161122cd640c2a5a2c1d7fa49ea9befff31dd
+  subpackages:
+  - oid
+- name: gopkg.in/gorp.v1
+  version: c87af80f3cc5036b55b83d77171e156791085e2e
+devImports: []
