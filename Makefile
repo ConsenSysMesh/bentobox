@@ -4,9 +4,9 @@ define docker_cmd
 		-ti --rm \
 		--name bentobox-crawler \
 		--net=host \
-		-v ${PWD}:/go/src/github.com/consensys/event-crawler \
+		-v ${PWD}:/go/src/github.com/consensys/bentobox-crawler \
 		-v ${PWD}/build/pkg:/go/pkg \
-		-w /go/src/github.com/consensys/event-crawler \
+		-w /go/src/github.com/consensys/bentobox-crawler \
 		infura/golang-dev \
 		$(1);
 endef
@@ -34,5 +34,9 @@ crawler:
 	$(call docker_cmd, go build -o build/bin/crawler -i main.go)
 
 # Will run inside the dev container
+# To add arguments, do, for example
+# ARGS="--help" make run-crawler
 run-crawler:
-	$(call docker_cmd, ./build/bin/crawler)
+	$(call docker_cmd, ./build/bin/crawler $(ARGS))
+
+.PHONY: bash bootstrap run-psql crawler run-crawler

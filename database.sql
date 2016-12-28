@@ -40,11 +40,19 @@ SET default_with_oids = false;
 
 CREATE TABLE blocks (
     block_number text NOT NULL,
-    block_hash text
+    block_hash text,
+    block_number_id bigint NOT NULL
 );
 
 
 ALTER TABLE blocks OWNER TO postgres;
+
+--
+-- Name: COLUMN blocks.block_number_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN blocks.block_number_id IS 'Makes lookups easier, as block_number is an hex text';
+
 
 --
 -- Name: logs; Type: TABLE; Schema: public; Owner: postgres
@@ -121,7 +129,7 @@ ALTER TABLE ONLY logs ALTER COLUMN id SET DEFAULT nextval('logs_id_seq'::regclas
 --
 
 ALTER TABLE ONLY blocks
-    ADD CONSTRAINT blocks_pkey PRIMARY KEY (block_number);
+    ADD CONSTRAINT blocks_pkey PRIMARY KEY (block_number_id);
 
 
 --
@@ -145,6 +153,13 @@ ALTER TABLE ONLY transactions
 --
 
 CREATE UNIQUE INDEX block_hash_idx ON blocks USING btree (block_hash);
+
+
+--
+-- Name: block_number_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX block_number_idx ON blocks USING btree (block_number);
 
 
 --
@@ -206,11 +221,11 @@ ALTER TABLE ONLY logs
 
 
 --
--- Name: transactions tx_block_number_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transactions tx_block_number_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY transactions
-    ADD CONSTRAINT tx_block_number_fk FOREIGN KEY (tx_block_number) REFERENCES blocks(block_number) MATCH FULL;
+    ADD CONSTRAINT tx_block_number_id_fk FOREIGN KEY (tx_block_number) REFERENCES blocks(block_number) MATCH FULL;
 
 
 --

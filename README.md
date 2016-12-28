@@ -72,6 +72,14 @@ make run-crawler
 
 Which will run the program inside the dev container.
 
+#### Adding arguments to the executable inside the container
+
+To add arguments, do, for example
+
+```
+ARGS="--help" make run-crawler
+```
+
 ### Herman, I want to compile and run the program without docker
 
 Fine. Do,

@@ -9,43 +9,42 @@ import (
 	gorp "gopkg.in/gorp.v1"
 )
 
-// TODO
-// Feed these from a config file
-const (
-	DB_USER     = "postgres"
-	DB_PASSWORD = "mysecretpassword"
-	DB_NAME     = "bentobox"
-)
+type Options struct {
+	User     string
+	Password string
+	DBName   string
+}
 
 type Block struct {
-	BlockNumber string `db:"block_number"`
-	BlockHash   string `db:"block_hash"`
+	BlockNumberID int64          `db:"block_number_id"`
+	BlockNumber   sql.NullString `db:"block_number"`
+	BlockHash     sql.NullString `db:"block_hash"`
 }
 
 type Transaction struct {
-	TransactionHash  string `db:"transaction_hash"`
-	BlockNumber      string `db:"tx_block_number"`
-	TransactionIndex string `db:"transaction_index"`
-	From             string `db:"tx_from"`
-	To               string `db:"tx_to"`
+	TransactionHash  sql.NullString `db:"transaction_hash"`
+	BlockNumber      sql.NullString `db:"tx_block_number"`
+	TransactionIndex sql.NullString `db:"transaction_index"`
+	From             sql.NullString `db:"tx_from"`
+	To               sql.NullString `db:"tx_to"`
 }
 
 type Log struct {
-	Id              int64  `db:"id"`
-	TransactionHash string `db:"log_transaction_hash"`
-	Data            string `db:"data"`
-	LogIndex        string `db:"log_index"`
-	Type            string `db:"mined"`
+	Id              int64          `db:"id"`
+	TransactionHash sql.NullString `db:"log_transaction_hash"`
+	Data            sql.NullString `db:"data"`
+	LogIndex        sql.NullString `db:"log_index"`
+	Type            sql.NullString `db:"mined"`
 }
 
 type Topic struct {
-	LogId   int64  `db:"log_id"`
-	Content string `db:"content"`
+	LogId   int64          `db:"log_id"`
+	Content sql.NullString `db:"content"`
 }
 
-func InitDb() *gorp.DbMap {
+func InitDb(options Options) *gorp.DbMap {
 	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-		DB_USER, DB_PASSWORD, DB_NAME)
+		options.User, options.Password, options.DBName)
 
 	db, err := sql.Open("postgres", dbinfo)
 	if err != nil {
@@ -54,8 +53,8 @@ func InitDb() *gorp.DbMap {
 
 	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
 
-	dbmap.AddTableWithName(Block{}, "blocks").SetKeys(true, "BlockNumber")
-	dbmap.AddTableWithName(Transaction{}, "transactions").SetKeys(true, "TransactionHash")
+	dbmap.AddTableWithName(Block{}, "blocks")
+	dbmap.AddTableWithName(Transaction{}, "transactions")
 	dbmap.AddTableWithName(Log{}, "logs").SetKeys(true, "Id")
 	dbmap.AddTableWithName(Topic{}, "topics")
 
