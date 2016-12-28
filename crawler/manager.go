@@ -1,8 +1,13 @@
 package crawler
 
-import "sync"
+import (
+	"sync"
+
+	gorp "gopkg.in/gorp.v1"
+)
 
 type Manager struct {
+	Dbmap           *gorp.DbMap
 	blocksInProcess BlocksInProcess
 }
 

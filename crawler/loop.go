@@ -14,25 +14,27 @@ type Options struct {
 }
 
 func GetData(options Options, dbmap *gorp.DbMap) {
-	var err error
-
-	// Let's get the max height of this network
-	maxBlockHeight, err := getNetworkHeight(options.Host)
-	if err != nil {
-		log.Fatalf("Error getting network height: %v", err)
-	}
-
 	// Start the manager
 	m := newManager()
+	m.Dbmap = dbmap
 
-	// Inserting Loop
 	// TODO
+	// Inserting Loop
 
-	// Feeding Loop
+	go feedingLoop(m, options)
+}
+
+func feedingLoop(m *Manager, options Options) {
 	for {
+		// Let's get the current max height of this network
+		maxBlockHeight, err := getNetworkHeight(options.Host)
+		if err != nil {
+			log.Fatalf("Error getting network height: %v", err)
+		}
+
 		// We get the ids of all the blocks we already have (ex: 1, 2, 5, 9)
 		var obtainedIds []int
-		_, err = dbmap.Select(&obtainedIds, "SELECT block_number_id FROM blocks ORDER BY block_number_id ASC")
+		_, err = m.Dbmap.Select(&obtainedIds, "SELECT block_number_id FROM blocks ORDER BY block_number_id ASC")
 		if err != nil {
 			log.Printf("Error on query: %v", err)
 			continue
