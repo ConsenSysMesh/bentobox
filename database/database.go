@@ -16,7 +16,7 @@ type Options struct {
 }
 
 type Block struct {
-	BlockNumberID int64          `db:"block_number_id"`
+	BlockNumberId int64          `db:"block_number_id"`
 	BlockNumber   sql.NullString `db:"block_number"`
 	BlockHash     sql.NullString `db:"block_hash"`
 }
