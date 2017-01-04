@@ -5,56 +5,12 @@ import (
 	"time"
 )
 
-func blockQuerying(m *Manager, options Options) {
-	log.Printf("Starting Block Querying Loop")
-
-	for {
-		blockId := <-m.queueBlockChan
-
-		go func() {
-			block, blockTxHashes, err := getBlockData(options.Host, blockId)
-			if err != nil {
-				log.Printf("Error on query: %v", err)
-			}
-
-			// TODO
-			// Use a library with levels of logs
-			// Maybe the very ethereum's glog
-			/*
-				log.Printf("Got info for block %v (%v): hash: %v no of txs: %v",
-					block.BlockNumber.String,
-					block.BlockNumberId,
-					block.BlockHash.String,
-					len(blockTxHashes),
-				)
-			*/
-
-			m.insertBlock(block)
-
-			// TODO
-			// Insert tx hashes!
-			_ = blockTxHashes
-		}()
-	}
-}
-
-func blockInsertingToDB(m *Manager) {
-	log.Println("Starting Block Inserting to DB Loop")
-
-	for {
-		block := <-m.insertBlockToDBChan
-		if err := m.dbmap.Insert(block); err != nil {
-			log.Printf("Error inserting block %v: %v", block.BlockNumberId, err)
-		}
-	}
-}
-
-func blockQueueFeeding(m *Manager, options Options) {
+func (m *Manager) feedBlocksToQueue() {
 	log.Println("Starting Block Queue Feeding Loop")
 
 	for {
 		// Let's get the current max height of this network
-		maxBlockHeight, err := getNetworkHeight(options.Host)
+		maxBlockHeight, err := getNetworkHeight(m.options.Host)
 		if err != nil {
 			log.Fatalf("Error getting network height: %v", err)
 		}
@@ -74,7 +30,7 @@ func blockQueueFeeding(m *Manager, options Options) {
 		log.Printf("Got %v block ids from the database", len(obtainedIds))
 
 		// How many blocks do we want to send to the processing queue?
-		blocksToQueueCount := options.MaxProcessingQueries - m.getBlocksInProcessCnt()
+		blocksToQueueCount := m.options.MaxProcessingQueries - m.getBlocksQueueCount()
 		blockIdsToQuery := make([]int64, 0)
 		var i int64
 		for i = 0; i <= maxBlockHeight; i++ {
@@ -92,9 +48,43 @@ func blockQueueFeeding(m *Manager, options Options) {
 		// We add the blockIds to the manager
 		log.Printf("Will add %v block Ids to the manager to query", len(blockIdsToQuery))
 		for _, id := range blockIdsToQuery {
-			m.addBlockToProcess(id)
+			m.addBlockToQueue(id)
 		}
 
-		time.Sleep(time.Duration(options.LoopTimeMs) * time.Millisecond)
+		time.Sleep(time.Duration(m.options.LoopTimeMs) * time.Millisecond)
+	}
+}
+
+func (m *Manager) queryBlockDispatcher() {
+	log.Printf("Starting Block Querying Loop")
+
+	for {
+		blockId := <-m.queryBlockToRPCChan
+
+		go func() {
+			block, blockTxHashes, err := getBlockData(m.options.Host, blockId)
+			if err != nil {
+				log.Printf("Error on RPC query: %v", err)
+				m.removeBlockFromQueue(blockId)
+				return
+			}
+
+			m.insertBlockToDBChan <- block
+			// TODO
+			// Insert tx hashes!
+			_ = blockTxHashes
+		}()
+	}
+}
+
+func (m *Manager) insertBlockPipe() {
+	log.Println("Starting Block Inserting to DB Loop")
+
+	for {
+		block := <-m.insertBlockToDBChan
+		if err := m.dbmap.Insert(block); err != nil {
+			log.Printf("Error inserting block %v: %v", block.BlockNumberId, err)
+		}
+		m.removeBlockFromQueue(block.BlockNumberId)
 	}
 }
