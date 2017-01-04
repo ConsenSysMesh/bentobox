@@ -30,12 +30,17 @@ func (m *Manager) feedBlocksToQueue() {
 		log.Printf("Got %v block ids from the database", len(obtainedIds))
 
 		// How many blocks do we want to send to the processing queue?
+		blocksToQueueMap := m.getBlocksQueueMap()
 		blocksToQueueCount := m.options.MaxProcessingQueries - m.getBlocksQueueCount()
 		blockIdsToQuery := make([]int64, 0)
 		var i int64
 		for i = 0; i <= maxBlockHeight; i++ {
 			if len(blockIdsToQuery) == blocksToQueueCount {
 				break
+			}
+
+			if _, ok := blocksToQueueMap[i]; ok {
+				continue
 			}
 
 			if _, ok := obtainedIdsMap[i]; ok {

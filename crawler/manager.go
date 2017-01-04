@@ -18,7 +18,7 @@ type Manager struct {
 }
 
 type BlocksQueue struct {
-	mutex sync.RWMutex
+	sync.RWMutex
 	items map[int64]struct{}
 	count int
 }
@@ -44,8 +44,8 @@ func newManager(options Options, dbmap *gorp.DbMap) *Manager {
 }
 
 func (m *Manager) addBlockToQueue(id int64) {
-	m.blocksQueue.mutex.Lock()
-	defer m.blocksQueue.mutex.Unlock()
+	m.blocksQueue.Lock()
+	defer m.blocksQueue.Unlock()
 
 	if _, ok := m.blocksQueue.items[id]; !ok {
 		m.blocksQueue.items[id] = struct{}{}
@@ -55,16 +55,27 @@ func (m *Manager) addBlockToQueue(id int64) {
 }
 
 func (m *Manager) removeBlockFromQueue(id int64) {
-	m.blocksQueue.mutex.Lock()
-	defer m.blocksQueue.mutex.Unlock()
+	m.blocksQueue.Lock()
+	defer m.blocksQueue.Unlock()
 
 	delete(m.blocksQueue.items, id)
 	m.blocksQueue.count -= 1
 }
 
+func (m *Manager) getBlocksQueueMap() map[int64]struct{} {
+	m.blocksQueue.Lock()
+	defer m.blocksQueue.Unlock()
+
+	response := make(map[int64]struct{})
+	for k, _ := range m.blocksQueue.items {
+		response[k] = m.blocksQueue.items[k]
+	}
+	return response
+}
+
 func (m *Manager) getBlocksQueueCount() int {
-	m.blocksQueue.mutex.Lock()
-	defer m.blocksQueue.mutex.Unlock()
+	m.blocksQueue.Lock()
+	defer m.blocksQueue.Unlock()
 
 	return m.blocksQueue.count
 }
